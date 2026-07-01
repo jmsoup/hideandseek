@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "package": "kr.jmsoup.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "camera.CameraMixin",
+    "camera.MouseHandlerMixin",
+    "input.ClientInputAccessor",
+    "input.KeyboardHandlerMixin",
+    "input.KeyboardInputMixin",
+    "player.AbstractClientPlayerMixin",
+    "player.EntityMixin",
+    "player.LocalPlayerMixin",
+    "renders.LivingEntityRendererMixin",
+    "renders.PlayerShadowMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  },
+  "mixins": [
+  ]
+}
