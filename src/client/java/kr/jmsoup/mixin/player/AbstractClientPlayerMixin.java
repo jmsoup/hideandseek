@@ -2,6 +2,7 @@ package kr.jmsoup.mixin.player;
 
 import kr.jmsoup.HideAndSeekClient;
 import kr.jmsoup.client.core.PaintCanvas;
+import kr.jmsoup.client.core.PaintManager;
 import kr.jmsoup.client.network.CustomSkinManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -25,7 +26,7 @@ public abstract class AbstractClientPlayerMixin {
 
         boolean isLocalPlayer = client.player != null && player.getUUID().equals(client.player.getUUID());
 
-        if (isLocalPlayer && PaintCanvas.isPaintingMode) {
+        if (isLocalPlayer && PaintManager.isPaintingMode) {
             PaintCanvas canvas = PaintCanvas.getInstance();
             canvas.init();
 
@@ -44,7 +45,7 @@ public abstract class AbstractClientPlayerMixin {
             return;
         }
 
-        if (PaintCanvas.isPaintingMode) {
+        if (PaintManager.isPaintingMode) {
             Identifier staticBlankId = Identifier.fromNamespaceAndPath(HideAndSeekClient.MOD_ID, "white_skin");
             ClientAsset.Texture blankCanvasTexture = new ClientAsset.ResourceTexture(staticBlankId);
             PlayerSkin blankSkin = new PlayerSkin(blankCanvasTexture, null, null, PlayerModelType.WIDE, original.secure());
