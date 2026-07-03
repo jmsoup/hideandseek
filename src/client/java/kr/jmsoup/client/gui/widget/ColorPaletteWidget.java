@@ -1,6 +1,7 @@
 package kr.jmsoup.client.gui.widget;
 
 import kr.jmsoup.HideAndSeekClient;
+import kr.jmsoup.client.util.ColorUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -101,9 +102,8 @@ public class ColorPaletteWidget {
         graphics.fill(indX - 2, indY - 2, indX + 2, indY + 2, 0xFF000000);
         graphics.fill(indX - 1, indY - 1, indX + 1, indY + 1, 0xFFFFFFFF);
 
-        int currentColor = getArgbColor();
         int previewW = Math.max(8, rightAreaWidth - 46);
-        graphics.fill(rightAreaX, previewY, rightAreaX + previewW, previewY + previewHeight, currentColor);
+        graphics.fill(rightAreaX, previewY, rightAreaX + previewW, previewY + previewHeight, ColorUtils.getARGB(red, green, blue, alpha));
 
         drawSlider(graphics, font, "V", 0, brightness, rightAreaX, sliderStartY, 0xFFAAAAAA, rightAreaWidth);
         drawSlider(graphics, font, "R", 1, red, rightAreaX, sliderStartY + sliderSpacing, 0xFFFF4444, rightAreaWidth);
@@ -295,18 +295,13 @@ public class ColorPaletteWidget {
         syncHexInput();
     }
 
-    public void setRGB(float r, float g, float b) {
-        this.red = r; this.green = g; this.blue = b;
+    public void setRGBA(float r, float g, float b, float a) {
+        this.red = r;
+        this.green = g;
+        this.blue = b;
+        this.alpha = a;
         updateHSVfromRGB();
     }
 
     public EditBox getHexInput() { return hexInput; }
-    
-    public int getAbgrColor() {
-        return ((int)(alpha * 255) << 24) | ((int)(blue * 255) << 16) | ((int)(green * 255) << 8) | ((int)(red * 255));
-    }
-
-    public int getArgbColor() {
-        return ((int)(alpha * 255) << 24) | ((int)(red * 255) << 16) | ((int)(green * 255) << 8) | ((int)(blue * 255));
-    }
 }
