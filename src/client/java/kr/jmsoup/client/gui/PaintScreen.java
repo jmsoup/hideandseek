@@ -1,11 +1,13 @@
 package kr.jmsoup.client.gui;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import kr.jmsoup.HideAndSeekClient;
 import kr.jmsoup.client.core.PaintCanvas;
 import kr.jmsoup.client.core.PaintHistory;
 import kr.jmsoup.client.core.PaintTools;
 import kr.jmsoup.client.gui.widget.ColorPaletteWidget;
 import kr.jmsoup.client.network.ClientSkinSender;
+import kr.jmsoup.client.util.ColorUtils;
 import kr.jmsoup.client.util.KeyMappings;
 import kr.jmsoup.client.util.SkinRaycaster;
 import net.minecraft.client.Minecraft;
@@ -83,6 +85,27 @@ public class PaintScreen extends Screen {
         }
     }
 
+    private void pickColor(double mouseX, double mouseY) {
+        SkinRaycaster.HitResult hit = SkinRaycaster.cast(this.player, mouseX, mouseY, this.partialTick);
+
+        if (hit != null) {
+            int hitU = (int) (hit.u * PaintCanvas.HD_SCALE);
+            int hitV = (int) (hit.v * PaintCanvas.HD_SCALE);
+
+            if (hitU >= 0 && hitU < PaintCanvas.CANVAS_SIZE && hitV >= 0 && hitV < PaintCanvas.CANVAS_SIZE) {
+                NativeImage img = paintCanvas.getImage();
+                if (img != null) {
+                    int color = img.getPixel(hitU, hitV);
+                    float[] rgba = ColorUtils.getRGBA(color);
+                    paletteWidget.setRGBA(rgba[0], rgba[1], rgba[2], rgba[3]);
+                    return;
+                }
+            }
+        }
+
+        pickColorFromScreen(mouseX, mouseY);
+    }
+
     private void pickColorFromScreen(double mouseX, double mouseY) {
         Minecraft client = Minecraft.getInstance();
         int physW = client.getWindow().getScreenWidth();
@@ -96,12 +119,8 @@ public class PaintScreen extends Screen {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             ByteBuffer buffer = stack.malloc(4);
             GL11.glReadPixels(physX, physY, 1, 1, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
-
-            float r = (buffer.get(0) & 0xFF) / 255.0f;
-            float g = (buffer.get(1) & 0xFF) / 255.0f;
-            float b = (buffer.get(2) & 0xFF) / 255.0f;
-
-            paletteWidget.setRGB(r, g, b);
+            float[] rgba = ColorUtils.getRGBA(buffer);
+            paletteWidget.setRGBA(rgba[0], rgba[1], rgba[2], rgba[3]);
         }
     }
 
@@ -116,7 +135,7 @@ public class PaintScreen extends Screen {
             double mouseY = event.y();
 
             if (isEyeDropperDown) {
-                pickColorFromScreen(mouseX, mouseY);
+                pickColor(mouseX, mouseY);
                 return true;
             }
 
@@ -152,7 +171,7 @@ public class PaintScreen extends Screen {
             double mouseY = event.y();
 
             if (isEyeDropperDown) {
-                pickColorFromScreen(mouseX, mouseY);
+                pickColor(mouseX, mouseY);
                 return true;
             }
 
@@ -265,7 +284,7 @@ public class PaintScreen extends Screen {
                     isStrokeSaved = true;
                 }
 
-                int color = paletteWidget.getAbgrColor();
+                int color = ColorUtils.getABGR(paletteWidget.red, paletteWidget.green, paletteWidget.blue, paletteWidget.alpha);
 
                 if (isFillMode) {
                     PaintTools.fillPixel(paintCanvas, hitU, hitV, color);
