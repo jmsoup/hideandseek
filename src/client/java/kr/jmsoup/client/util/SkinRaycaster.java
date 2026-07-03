@@ -1,11 +1,17 @@
 package kr.jmsoup.client.util;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.entity.player.AvatarRenderer;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 public class SkinRaycaster {
     public static class HitResult {
@@ -17,85 +23,72 @@ public class SkinRaycaster {
         Minecraft client = Minecraft.getInstance();
         Camera camera = client.gameRenderer.getMainCamera();
 
+        var rawRenderer = client.getEntityRenderDispatcher().getRenderer(player);
+        if (!(rawRenderer instanceof AvatarRenderer renderer)) return null;
+        AvatarRenderState state = (AvatarRenderState) renderer.createRenderState(player, partialTick);
+        PlayerModel model = (PlayerModel) renderer.getModel();
+        model.setupAnim(state);
+
         double guiScale = client.getWindow().getGuiScale();
-        float nx = (float)((rawMouseX * guiScale) / client.getWindow().getWidth()) * 2.0f - 1.0f;
-        float ny = 1.0f - (float)((rawMouseY * guiScale) / client.getWindow().getHeight()) * 2.0f;
+        double physicalX = rawMouseX * guiScale;
+        double physicalY = rawMouseY * guiScale;
 
-        Matrix4f viewProj = new Matrix4f();
-        camera.getViewRotationProjectionMatrix(viewProj);
-        Matrix4f invViewProj = viewProj.invert();
+        float nx = (float)(physicalX / (double)client.getWindow().getWidth()) * 2.0f - 1.0f;
+        float ny = 1.0f - (float)(physicalY / (double)client.getWindow().getHeight()) * 2.0f;
 
-        Vector4f near = new Vector4f(nx, ny, 0.01f, 1.0f);
-        Vector4f far = new Vector4f(nx, ny, 0.99f, 1.0f);
+        Camera.NearPlane nearPlane = camera.getNearPlane(camera.getFov());
+        Vec3 planePoint = nearPlane.getPointOnPlane(nx, ny);
 
-        invViewProj.transform(near);
-        invViewProj.transform(far);
-
-        if (near.w != 0.0f) near.div(near.w);
-        if (far.w != 0.0f) far.div(far.w);
-
-        Vector3f rayDir = new Vector3f(far.x - near.x, far.y - near.y, far.z - near.z).normalize();
+        Vector3f rayDir = new Vector3f((float)planePoint.x, (float)planePoint.y, (float)planePoint.z).normalize();
+        Vector3f camOrigin = camera.position().toVector3f();
 
         double lerpX = player.xo + (player.getX() - player.xo) * partialTick;
         double lerpY = player.yo + (player.getY() - player.yo) * partialTick;
         double lerpZ = player.zo + (player.getZ() - player.zo) * partialTick;
-
         float lerpBodyYaw = lerpAngle(partialTick, player.yBodyRotO, player.yBodyRot);
-        float lerpHeadYaw = lerpAngle(partialTick, player.yHeadRotO, player.yHeadRot);
-        float lerpPitch = lerpAngle(partialTick, player.xRotO, player.getXRot());
 
-        float scale = player.getScale();
+        float scale = player.getScale() * 0.9375f;
 
-        Matrix4f modelMatrix = new Matrix4f();
-        modelMatrix.translate((float)lerpX, (float)lerpY, (float)lerpZ);
-        modelMatrix.rotateY((float)Math.toRadians(180.0f - lerpBodyYaw));
+        ModelPart root = model.root();
+        ModelPart[] parts = { model.head, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg };
 
-        modelMatrix.scale(-scale, -scale, scale);
-        modelMatrix.translate(0f, -1.501f, 0f);
-
-        Matrix4f invModel = modelMatrix.invert();
-
-        Vector3f camOrigin = new Vector3f((float)camera.position().x, (float)camera.position().y, (float)camera.position().z);
-        Vector3f oRoot = new Vector3f(camOrigin);
-        invModel.transformPosition(oRoot);
-        oRoot.mul(16.0f);
-
-        Vector3f dRoot = new Vector3f(rayDir);
-        invModel.transformDirection(dRoot).normalize();
-
-        float[][] parts = {
-                { 0 + SkinLayoutInfo.OFFSET_HEAD[0], 0 + SkinLayoutInfo.OFFSET_HEAD[1], 0 + SkinLayoutInfo.OFFSET_HEAD[2],
-                        -4, -8, -4,  8, 8, 8,  0, 0,  lerpPitch, (lerpHeadYaw - lerpBodyYaw), 0 },
-                { 0 + SkinLayoutInfo.OFFSET_BODY[0], 0 + SkinLayoutInfo.OFFSET_BODY[1], 0 + SkinLayoutInfo.OFFSET_BODY[2],
-                        -4,  0, -2,  8, 12, 4,  16, 16,  0, 0, 0 },
-                { -5 + SkinLayoutInfo.OFFSET_R_ARM[0], 2f + SkinLayoutInfo.OFFSET_R_ARM[1], 0 + SkinLayoutInfo.OFFSET_R_ARM[2],
-                        -3, -2, -2,  4, 12, 4,  40, 16,  0, 0, 0 },
-                { 5 + SkinLayoutInfo.OFFSET_L_ARM[0], 2f + SkinLayoutInfo.OFFSET_L_ARM[1], 0 + SkinLayoutInfo.OFFSET_L_ARM[2],
-                        -1, -2, -2,  4, 12, 4,  32, 48,  0, 0, 0 },
-                { -1.9f + SkinLayoutInfo.OFFSET_R_LEG[0], 12 + SkinLayoutInfo.OFFSET_R_LEG[1], 0 + SkinLayoutInfo.OFFSET_R_LEG[2],
-                        -2, 0, -2,  4, 12, 4,  0, 16,  0, 0, 0 },
-                { 1.9f + SkinLayoutInfo.OFFSET_L_LEG[0], 12 + SkinLayoutInfo.OFFSET_L_LEG[1], 0 + SkinLayoutInfo.OFFSET_L_LEG[2],
-                        -2, 0, -2,  4, 12, 4,  16, 48,  0, 0, 0 }
+        float[][] boxes = {
+                {-4, -8, -4, 8, 8, 8, 0, 0},
+                {-4, 0, -2, 8, 12, 4, 16, 16},
+                {-3, -2, -2, 4, 12, 4, 40, 16},
+                {-1, -2, -2, 4, 12, 4, 32, 48},
+                {-2, 0, -2, 4, 12, 4, 0, 16},
+                {-2, 0, -2, 4, 12, 4, 16, 48}
         };
 
         HitResult bestHit = null;
 
-        for (float[] p : parts) {
-            Matrix4f partTransform = new Matrix4f();
-            partTransform.translate(p[0], p[1], p[2]);
+        for (int i = 0; i < parts.length; i++) {
+            ModelPart part = parts[i];
+            float[] b = boxes[i];
 
-            if (p[13] != 0) partTransform.rotateZ((float)Math.toRadians(p[13]));
-            if (p[12] != 0) partTransform.rotateY((float)Math.toRadians(p[12]));
-            if (p[11] != 0) partTransform.rotateX((float)Math.toRadians(p[11]));
+            PoseStack stack = new PoseStack();
+            stack.translate(lerpX, lerpY, lerpZ);
+            stack.mulPose(Axis.YP.rotationDegrees(180.0f - lerpBodyYaw));
 
-            Matrix4f invPart = partTransform.invert();
+            stack.scale(-scale, -scale, scale);
+            stack.translate(0f, -1.501f, 0f);
 
-            Vector3f oLocal = new Vector3f(oRoot);
+            root.translateAndRotate(stack);
+            part.translateAndRotate(stack);
+
+            Matrix4f worldMatrix = new Matrix4f(stack.last().pose());
+            Matrix4f invPart = worldMatrix.invert();
+
+            Vector3f oLocal = new Vector3f(camOrigin);
             invPart.transformPosition(oLocal);
-            Vector3f dLocal = new Vector3f(dRoot);
+
+            Vector3f dLocal = new Vector3f(rayDir);
             invPart.transformDirection(dLocal).normalize();
 
-            HitResult hit = intersectLocalBox(oLocal, dLocal, p);
+            oLocal.mul(16.0f);
+
+            HitResult hit = intersectLocalBox(oLocal, dLocal, b[0], b[1], b[2], b[3], b[4], b[5], (int)b[6], (int)b[7]);
             if (hit != null) {
                 if (bestHit == null || hit.distance < bestHit.distance) {
                     bestHit = hit;
@@ -110,9 +103,12 @@ public class SkinRaycaster {
         return start + delta * partial;
     }
 
-    private static HitResult intersectLocalBox(Vector3f oLocal, Vector3f dLocal, float[] p) {
-        double[] min = {p[3], p[4], p[5]};
-        double[] max = {p[3] + p[6], p[4] + p[7], p[5] + p[8]};
+    private static HitResult intersectLocalBox(Vector3f oLocal, Vector3f dLocal,
+                                               float minX, float minY, float minZ,
+                                               float w, float h, float dp,
+                                               int texU, int texV) {
+        double[] min = {minX, minY, minZ};
+        double[] max = {minX + w, minY + h, minZ + dp};
         double[] origin = {oLocal.x, oLocal.y, oLocal.z};
         double[] dir = {dLocal.x, dLocal.y, dLocal.z};
 
@@ -143,19 +139,18 @@ public class SkinRaycaster {
         double hy = oLocal.y + dLocal.y * tmin;
         double hz = oLocal.z + dLocal.z * tmin;
 
-        int texU = (int) p[9], texV = (int) p[10];
-        int w = (int) p[6], h = (int) p[7], dp = (int) p[8];
-
         double faceX = 0, faceY = 0;
         int uOff = 0, vOff = 0;
 
+        int iW = (int) w, iH = (int) h, iDp = (int) dp;
+
         switch (normalIn) {
-            case 0: faceX = max[2] - hz; faceY = hy - min[1]; uOff = 0; vOff = dp; break;
-            case 1: faceX = hz - min[2]; faceY = hy - min[1]; uOff = dp + w; vOff = dp; break;
-            case 2: faceX = hx - min[0]; faceY = max[2] - hz; uOff = dp; vOff = 0; break;
-            case 3: faceX = hx - min[0]; faceY = max[2] - hz; uOff = dp + w; vOff = 0; break;
-            case 4: faceX = hx - min[0]; faceY = hy - min[1]; uOff = dp; vOff = dp; break;
-            case 5: faceX = max[0] - hx; faceY = hy - min[1]; uOff = dp + w + dp; vOff = dp; break;
+            case 0: faceX = max[2] - hz; faceY = hy - min[1]; uOff = 0; vOff = iDp; break;
+            case 1: faceX = hz - min[2]; faceY = hy - min[1]; uOff = iDp + iW; vOff = iDp; break;
+            case 2: faceX = hx - min[0]; faceY = max[2] - hz; uOff = iDp; vOff = 0; break;
+            case 3: faceX = hx - min[0]; faceY = max[2] - hz; uOff = iDp + iW; vOff = 0; break;
+            case 4: faceX = hx - min[0]; faceY = hy - min[1]; uOff = iDp; vOff = iDp; break;
+            case 5: faceX = max[0] - hx; faceY = hy - min[1]; uOff = iDp + iW + iDp; vOff = iDp; break;
         }
 
         HitResult res = new HitResult();
