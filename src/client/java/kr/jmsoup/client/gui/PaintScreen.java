@@ -57,7 +57,13 @@ public class PaintScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.paletteWidget = new ColorPaletteWidget(this.font);
+
+        if (this.paletteWidget == null) {
+            this.paletteWidget = new ColorPaletteWidget(this.font);
+        } else {
+            this.paletteWidget.clampPosition();
+            this.paletteWidget.updateLayout();
+        }
     }
 
     @Override
