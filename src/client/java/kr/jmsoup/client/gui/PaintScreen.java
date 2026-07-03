@@ -24,14 +24,27 @@ import org.lwjgl.system.MemoryStack;
 import java.nio.ByteBuffer;
 
 public class PaintScreen extends Screen {
-    private final AbstractClientPlayer player;
-    private final PaintCanvas paintCanvas;
-    private ColorPaletteWidget paletteWidget;
+    private static final double[] COS_CACHE = new double[72];
+    private static final double[] SIN_CACHE = new double[72];
+
+    static {
+        for (int i = 0; i < 72; i++) {
+            double rad = Math.toRadians(i * 5);
+            COS_CACHE[i] = Math.cos(rad);
+            SIN_CACHE[i] = Math.sin(rad);
+        }
+    }
 
     public static int currentBrushSize = 16;
-    private float lastPartialTick = 0f;
+
+    private final AbstractClientPlayer player;
+    private final PaintCanvas paintCanvas;
+
+    private ColorPaletteWidget paletteWidget;
+    private float partialTick = 0f;
     private boolean isEyeDropperDown = false;
-    private boolean canvasEdit = false;
+    private boolean isStrokeSaved = false;
+    private boolean isCanvasDirty = false;
 
     public PaintScreen(AbstractClientPlayer player, PaintCanvas canvas) {
         super(Component.literal("Paint Mode"));
@@ -47,7 +60,7 @@ public class PaintScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        this.lastPartialTick = partialTick;
+        this.partialTick = partialTick;
 
         paletteWidget.render(graphics, mouseX, mouseY, this.font);
 
@@ -63,10 +76,9 @@ public class PaintScreen extends Screen {
         int drawX = (int) Math.round(mouseX);
         int drawY = (int) Math.round(mouseY);
 
-        for (int i = 0; i < 360; i += 5) {
-            double rad = Math.toRadians(i);
-            int px = (int) (drawX + Math.cos(rad) * radius);
-            int py = (int) (drawY + Math.sin(rad) * radius);
+        for (int i = 0; i < 72; i++) {
+            int px = (int) (drawX + COS_CACHE[i] * radius);
+            int py = (int) (drawY + SIN_CACHE[i] * radius);
             graphics.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
         }
     }
@@ -99,6 +111,7 @@ public class PaintScreen extends Screen {
         if (button == 1) return true;
 
         if (button == 0) {
+            isStrokeSaved = false;
             double mouseX = event.x();
             double mouseY = event.y();
 
@@ -111,12 +124,10 @@ public class PaintScreen extends Screen {
                 return true;
             }
 
-            SkinRaycaster.HitResult hit = SkinRaycaster.cast(this.player, mouseX, mouseY, this.lastPartialTick);
+            SkinRaycaster.HitResult hit = SkinRaycaster.cast(this.player, mouseX, mouseY, this.partialTick);
             if (hit != null) {
-                PaintTools.startNewStroke();
-                PaintHistory.saveState(paintCanvas);
                 if (executePaintAction(mouseX, mouseY, event.hasControlDown())) {
-                    canvasEdit = true;
+                    isCanvasDirty = true;
                     paintCanvas.upload();
                 }
             }
@@ -167,7 +178,7 @@ public class PaintScreen extends Screen {
             }
 
             if(changed){
-                canvasEdit = true;
+                isCanvasDirty = true;
                 paintCanvas.upload();
             }
             return true;
@@ -178,9 +189,9 @@ public class PaintScreen extends Screen {
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
         paletteWidget.mouseReleased();
-        if (event.button() == 0 && canvasEdit) {
+        if (event.button() == 0 && isCanvasDirty) {
             ClientSkinSender.broadcastSkin();
-            canvasEdit = false;
+            isCanvasDirty = false;
         }
         return super.mouseReleased(event);
     }
@@ -241,14 +252,19 @@ public class PaintScreen extends Screen {
     }
 
     private boolean executePaintAction(double mouseX, double mouseY, boolean isFillMode) {
-        SkinRaycaster.HitResult hit = SkinRaycaster.cast(this.player, mouseX, mouseY, this.lastPartialTick);
+        SkinRaycaster.HitResult hit = SkinRaycaster.cast(this.player, mouseX, mouseY, this.partialTick);
 
         if (hit != null) {
-            int hdScale = PaintCanvas.CANVAS_SIZE / 64;
-            int hitU = (int) (hit.u * hdScale);
-            int hitV = (int) (hit.v * hdScale);
+            int hitU = (int) (hit.u * PaintCanvas.HD_SCALE);
+            int hitV = (int) (hit.v * PaintCanvas.HD_SCALE);
 
             if (hitU >= 0 && hitU < PaintCanvas.CANVAS_SIZE && hitV >= 0 && hitV < PaintCanvas.CANVAS_SIZE) {
+                if (!isStrokeSaved) {
+                    PaintHistory.saveState(paintCanvas);
+                    PaintTools.startNewStroke();
+                    isStrokeSaved = true;
+                }
+
                 int color = paletteWidget.getAbgrColor();
 
                 if (isFillMode) {
