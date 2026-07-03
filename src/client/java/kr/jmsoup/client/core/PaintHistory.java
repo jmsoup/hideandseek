@@ -3,11 +3,11 @@ package kr.jmsoup.client.core;
 import com.mojang.blaze3d.platform.NativeImage;
 import org.lwjgl.system.MemoryUtil;
 
-import java.util.Stack;
+import java.util.ArrayDeque;
 
 public class PaintHistory {
-    private static final Stack<NativeImage> undoStack = new Stack<>();
-    private static final Stack<NativeImage> redoStack = new Stack<>();
+    private static final ArrayDeque<NativeImage> undoStack = new ArrayDeque<>();
+    private static final ArrayDeque<NativeImage> redoStack = new ArrayDeque<>();
     private static final int MAX_HISTORY = 30;
 
     public static void saveState(PaintCanvas canvas) {
@@ -17,11 +17,11 @@ public class PaintHistory {
         long bytesCount = (long) PaintCanvas.CANVAS_SIZE * PaintCanvas.CANVAS_SIZE * 4L;
         MemoryUtil.memCopy(canvas.getImage().getPointer(), snapshot.getPointer(), bytesCount);
 
-        undoStack.push(snapshot);
+        undoStack.addFirst(snapshot);
 
         if (undoStack.size() > MAX_HISTORY) {
-            NativeImage oldest = undoStack.remove(0);
-            oldest.close(); // 메모리 해제
+            NativeImage oldest = undoStack.pollLast();
+            oldest.close();
         }
 
         for (NativeImage img : redoStack) img.close();
@@ -32,12 +32,12 @@ public class PaintHistory {
         if (undoStack.isEmpty() || canvas.getImage() == null) return false;
 
         NativeImage current = new NativeImage(NativeImage.Format.RGBA, PaintCanvas.CANVAS_SIZE, PaintCanvas.CANVAS_SIZE, false);
-        long bytesCount = (long) PaintCanvas.CANVAS_SIZE * PaintCanvas.CANVAS_SIZE * 4L;
-        MemoryUtil.memCopy(canvas.getImage().getPointer(), current.getPointer(), bytesCount);
+        long byteCount = (long) PaintCanvas.CANVAS_SIZE * PaintCanvas.CANVAS_SIZE * 4L;
+        MemoryUtil.memCopy(canvas.getImage().getPointer(), current.getPointer(), byteCount);
         redoStack.push(current);
 
-        NativeImage previous = undoStack.pop();
-        MemoryUtil.memCopy(previous.getPointer(), canvas.getImage().getPointer(), bytesCount);
+        NativeImage previous = undoStack.pollFirst();
+        MemoryUtil.memCopy(previous.getPointer(), canvas.getImage().getPointer(), byteCount);
         previous.close();
 
         canvas.upload();
@@ -48,12 +48,12 @@ public class PaintHistory {
         if (redoStack.isEmpty() || canvas.getImage() == null) return false;
 
         NativeImage current = new NativeImage(NativeImage.Format.RGBA, PaintCanvas.CANVAS_SIZE, PaintCanvas.CANVAS_SIZE, false);
-        long bytesCount = (long) PaintCanvas.CANVAS_SIZE * PaintCanvas.CANVAS_SIZE * 4L;
-        MemoryUtil.memCopy(canvas.getImage().getPointer(), current.getPointer(), bytesCount);
+        long byteCount = (long) PaintCanvas.CANVAS_SIZE * PaintCanvas.CANVAS_SIZE * 4L;
+        MemoryUtil.memCopy(canvas.getImage().getPointer(), current.getPointer(), byteCount);
         undoStack.push(current);
 
-        NativeImage next = redoStack.pop();
-        MemoryUtil.memCopy(next.getPointer(), canvas.getImage().getPointer(), bytesCount);
+        NativeImage next = redoStack.pollFirst();
+        MemoryUtil.memCopy(next.getPointer(), canvas.getImage().getPointer(), byteCount);
         next.close();
 
         canvas.upload();
