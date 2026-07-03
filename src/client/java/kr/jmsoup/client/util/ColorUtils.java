@@ -1,19 +1,25 @@
 package kr.jmsoup.client.util;
 
+import java.nio.ByteBuffer;
+
 public class ColorUtils {
-    public static int blendColor(int srcAbgr, int dstAbgr) {
-        int srcA = (srcAbgr >> 24) & 0xFF;
-        if (srcA == 255) return srcAbgr;
-        if (srcA == 0) return dstAbgr;
+    public static int blendColor(int abgr, int oldColor) {
+        int srcA = (abgr >> 24) & 0xFF;
 
-        int dstA = (dstAbgr >> 24) & 0xFF;
-        int srcB = (srcAbgr >> 16) & 0xFF;
-        int srcG = (srcAbgr >> 8) & 0xFF;
-        int srcR = srcAbgr & 0xFF;
+        if (srcA == 255) return abgr;
 
-        int dstB = (dstAbgr >> 16) & 0xFF;
-        int dstG = (dstAbgr >> 8) & 0xFF;
-        int dstR = dstAbgr & 0xFF;
+        int dstA = (oldColor >> 24) & 0xFF;
+        int dstR = (oldColor >> 16) & 0xFF;
+        int dstG = (oldColor >> 8) & 0xFF;
+        int dstB = oldColor & 0xFF;
+
+        if (srcA == 0) {
+            return (dstA << 24) | (dstB << 16) | (dstG << 8) | dstR;
+        }
+
+        int srcB = (abgr >> 16) & 0xFF;
+        int srcG = (abgr >> 8) & 0xFF;
+        int srcR = abgr & 0xFF;
 
         float alphaSrc = srcA / 255.0f;
         float alphaDst = dstA / 255.0f;
@@ -27,5 +33,35 @@ public class ColorUtils {
         int aOutInt = (int) (outA * 255.0f);
 
         return (aOutInt << 24) | (bOut << 16) | (gOut << 8) | rOut;
+    }
+
+    // ABGR -> RGBA
+    public static float[] getRGBA(int abgr) {
+        return new float[] {
+                ((abgr >> 16) & 0xFF) / 255.0f, // R
+                ((abgr >> 8) & 0xFF) / 255.0f,  // G
+                (abgr & 0xFF) / 255.0f,         // B
+                ((abgr >> 24) & 0xFF) / 255.0f  // A
+        };
+    }
+
+    // BGRA -> RGBA
+    public static float[] getRGBA(ByteBuffer buffer) {
+        return new float[] {
+                (buffer.get(0) & 0xFF) / 255.0f, // R
+                (buffer.get(1) & 0xFF) / 255.0f, // G
+                (buffer.get(2) & 0xFF) / 255.0f, // B
+                (buffer.get(3) & 0xFF) / 255.0f  // A
+        };
+    }
+
+    // RGBA -> ABGR
+    public static int getABGR(float r, float g, float b, float a) {
+        return ((int)(a * 255) << 24) | ((int)(b * 255) << 16) | ((int)(g * 255) << 8) | ((int)(r * 255));
+    }
+
+    // RGBA -> ARGB
+    public static int getARGB(float r, float g, float b, float a) {
+        return ((int)(a * 255) << 24) | ((int)(r * 255) << 16) | ((int)(g * 255) << 8) | ((int)(b * 255));
     }
 }
