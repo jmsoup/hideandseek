@@ -231,6 +231,13 @@ public class ColorPaletteWidget {
         double dist = Math.sqrt(dx * dx + dy * dy);
 
         saturation = (float) Mth.clamp(dist / maxRadius, 0.0, 1.0);
+
+        if (saturation < 0.05f) {
+            saturation = 0.0f;
+        } else if (saturation > 0.98f) {
+            saturation = 1.0f;
+        }
+
         double angle = Math.atan2(dy, dx);
         if (angle < 0) angle += Math.PI * 2.0;
         hue = (float) (angle / (Math.PI * 2.0));
@@ -243,6 +250,10 @@ public class ColorPaletteWidget {
         int sWidth = rightAreaWidth - 8;
         int handleW = Math.max(2, sWidth / 15);
         float val = (float) Mth.clamp((mouseX - (rightAreaX + 8 + handleW / 2.0f)) / (sWidth - handleW), 0.0, 1.0);
+
+        if (val > 0.97f) val = 1.0f;
+        else if (val < 0.03f) val = 0.0f;
+
         if (index == 0) { brightness = val; updateRGBfromHSV(); }
         else if (index == 1) { red = val; updateHSVfromRGB(); }
         else if (index == 2) { green = val; updateHSVfromRGB(); }
