@@ -1,6 +1,7 @@
 package kr.jmsoup.client.network;
 
 import kr.jmsoup.client.core.PaintCanvas;
+import kr.jmsoup.client.core.PaintManager;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 
@@ -21,12 +22,12 @@ public class ModNetworking {
                         break;
 
                     case SET_MODE:
-                        PaintCanvas.setPaintingMode(payload.dataBytes()[0] == 1);
+                        PaintManager.setPaintingMode(payload.dataBytes()[0] == 1);
                         CustomSkinManager.clearAllSkins();
                         break;
 
                     case SHOW_NAME:
-                        PaintCanvas.setShowNameplate(payload.dataBytes()[0] == 1);
+                        PaintManager.setShowNameplate(payload.dataBytes()[0] == 1);
                         break;
 
                     default:
