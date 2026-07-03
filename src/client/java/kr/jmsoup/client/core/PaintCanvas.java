@@ -8,15 +8,16 @@ import net.minecraft.core.ClientAsset;
 import net.minecraft.resources.Identifier;
 
 public class PaintCanvas {
-    private static PaintCanvas instance;
     public static final int CANVAS_SIZE = 1024;
+    public static final int HD_SCALE = CANVAS_SIZE / 64;
     public static final Identifier CANVAS_ID = Identifier.fromNamespaceAndPath(HideAndSeekClient.MOD_ID, "hd_canvas");
+
+    private static PaintCanvas instance;
+    public static boolean isPaintingMode = false;
+    public static boolean showNameplate = true;
 
     private NativeImage canvasImage;
     private DynamicTexture dynamicTexture;
-
-    public static boolean isPaintingMode = false;
-    public static boolean showNameplate = true;
 
     public static void setPaintingMode(boolean paintingMode) {
         isPaintingMode = paintingMode;
@@ -41,14 +42,12 @@ public class PaintCanvas {
     public void resetAllData() {
         if (canvasImage != null) {
             canvasImage.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE, 0xFFFFFFFF);
-            int s = CANVAS_SIZE / 64;
-
-            canvasImage.fillRect(32 * s, 0, 32 * s, 16 * s, 0x00000000);
-            canvasImage.fillRect(16 * s, 32 * s, 24 * s, 16 * s, 0x00000000);
-            canvasImage.fillRect(40 * s, 32 * s, 16 * s, 16 * s, 0x00000000);
-            canvasImage.fillRect(48 * s, 48 * s, 16 * s, 16 * s, 0x00000000);
-            canvasImage.fillRect(0, 32 * s, 16 * s, 16 * s, 0x00000000);
-            canvasImage.fillRect(0, 48 * s, 16 * s, 16 * s, 0x00000000);
+            canvasImage.fillRect(32 * HD_SCALE, 0, 32 * HD_SCALE, 16 * HD_SCALE, 0x00000000);
+            canvasImage.fillRect(16 * HD_SCALE, 32 * HD_SCALE, 24 * HD_SCALE, 16 * HD_SCALE, 0x00000000);
+            canvasImage.fillRect(40 * HD_SCALE, 32 * HD_SCALE, 16 * HD_SCALE, 16 * HD_SCALE, 0x00000000);
+            canvasImage.fillRect(48 * HD_SCALE, 48 * HD_SCALE, 16 * HD_SCALE, 16 * HD_SCALE, 0x00000000);
+            canvasImage.fillRect(0, 32 * HD_SCALE, 16 * HD_SCALE, 16 * HD_SCALE, 0x00000000);
+            canvasImage.fillRect(0, 48 * HD_SCALE, 16 * HD_SCALE, 16 * HD_SCALE, 0x00000000);
 
             if (dynamicTexture != null) dynamicTexture.upload();
         }

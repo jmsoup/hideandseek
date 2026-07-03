@@ -7,12 +7,13 @@ import kr.jmsoup.client.util.SkinLayoutInfo;
 import java.util.Arrays;
 
 public class PaintTools {
-    private static final int[][] strokeMap = new int[PaintCanvas.CANVAS_SIZE][PaintCanvas.CANVAS_SIZE];
-    private static int currentStrokeId = 0;
-
     private static final int MAX_PIXELS = PaintCanvas.CANVAS_SIZE * PaintCanvas.CANVAS_SIZE;
+
+    private static final int[][] strokeMap = new int[PaintCanvas.CANVAS_SIZE][PaintCanvas.CANVAS_SIZE];
     private static final int[] stackX = new int[MAX_PIXELS];
     private static final int[] stackY = new int[MAX_PIXELS];
+
+    private static int currentStrokeId = 0;
 
     public static void startNewStroke() {
         currentStrokeId++;
