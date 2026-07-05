@@ -3,13 +3,6 @@ package kr.jmsoup.client.util;
 import kr.jmsoup.client.core.PaintCanvas;
 
 public class SkinLayoutInfo {
-    public static final float[] OFFSET_HEAD  = { 0.0f, 1.6f, 0.0f };
-    public static final float[] OFFSET_BODY  = { 0.0f, 1.1f, 0.0f };
-    public static final float[] OFFSET_R_ARM = { 0.0f, 0.75f, 0.0f };
-    public static final float[] OFFSET_L_ARM = { 0.0f, 0.75f, 0.0f };
-    public static final float[] OFFSET_R_LEG = { 0.0f, 0.27f, 0.0f };
-    public static final float[] OFFSET_L_LEG = { 0.0f, 0.27f, 0.0f };
-
     public static boolean isOuterLayer(int u, int v) {
         int s = PaintCanvas.CANVAS_SIZE / 64;
         if (u >= 32 * s && u < 64 * s && v >= 0 && v < 16 * s) return true; // Hat
