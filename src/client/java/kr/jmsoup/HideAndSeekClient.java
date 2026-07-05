@@ -1,6 +1,7 @@
 package kr.jmsoup;
 
 import kr.jmsoup.client.core.PaintCanvas;
+import kr.jmsoup.client.core.PaintManager;
 import kr.jmsoup.client.gui.PaintScreen;
 import kr.jmsoup.client.network.ModNetworking;
 import kr.jmsoup.client.util.KeyMappings;
@@ -52,7 +53,7 @@ public class HideAndSeekClient implements ClientModInitializer {
 				wasThirdPerson = isThirdPerson;
 			}
 
-			while (KeyMappings.OPEN_PAINT.consumeClick() && PaintCanvas.isPaintingMode) {
+			while (KeyMappings.OPEN_PAINT.consumeClick() && PaintManager.isPaintingMode) {
 				if (client.screen == null && !client.options.getCameraType().isFirstPerson()) {
 					client.setScreen(new PaintScreen(client.player, PaintCanvas.getInstance()));
 				}

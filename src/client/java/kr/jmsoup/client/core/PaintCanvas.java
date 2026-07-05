@@ -13,20 +13,9 @@ public class PaintCanvas {
     public static final Identifier CANVAS_ID = Identifier.fromNamespaceAndPath(HideAndSeekClient.MOD_ID, "hd_canvas");
 
     private static PaintCanvas instance;
-    public static boolean isPaintingMode = false;
-    public static boolean showNameplate = true;
 
     private NativeImage canvasImage;
     private DynamicTexture dynamicTexture;
-
-    public static void setPaintingMode(boolean paintingMode) {
-        isPaintingMode = paintingMode;
-        getInstance().resetAllData();
-    }
-
-    public static void setShowNameplate(boolean nameplateMode) {
-        showNameplate = nameplateMode;
-    }
 
     public void init() {
         if (dynamicTexture == null) {
