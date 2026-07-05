@@ -15,7 +15,7 @@ public class KeyMappings {
     public static KeyMapping EYE_DROPPER;
 
     public static void register() {
-        OPEN_PAINT = KeyMappingHelper.registerKeyMapping(new KeyMapping("페인트 모드", GLFW.GLFW_KEY_B, CATEGORY));
+        OPEN_PAINT = KeyMappingHelper.registerKeyMapping(new KeyMapping("페인트 모드", GLFW.GLFW_KEY_G, CATEGORY));
 
         BRUSH_INCREASE = KeyMappingHelper.registerKeyMapping(new KeyMapping("브러쉬 크기 증가", GLFW.GLFW_KEY_RIGHT_BRACKET, CATEGORY));
 
