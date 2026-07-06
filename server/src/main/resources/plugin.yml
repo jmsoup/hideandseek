@@ -1,0 +1,8 @@
+name: hideandseek
+version: '${version}'
+
+main: kr.jmsoup.hideandseek.HideAndSeek
+api-version: '26.1.1'
+load: POSTWORLD
+
+authors: [ jmsoup ]
