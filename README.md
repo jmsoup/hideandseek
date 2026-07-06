@@ -23,4 +23,4 @@
 ## 개발 환경
 * Java 25
 * **Client-Side:** Minecraft 26.1.1 / Fabric Loader & Fabric API
-* **Server-Side:** Paper 26.1.1 / [동기화 플러그인](https://github.com/jmsoup/hideandseekserver)
+* **Server-Side:** Paper 26.1.1
