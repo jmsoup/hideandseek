@@ -1,11 +1,15 @@
 pluginManagement {
 	repositories {
+		mavenCentral()
+		gradlePluginPortal()
 		maven {
 			name = "Fabric"
 			url = uri("https://maven.fabricmc.net/")
 		}
-		mavenCentral()
-		gradlePluginPortal()
+		maven {
+			name = "Paper"
+			url = uri("https://repo.papermc.io/repository/maven-public/")
+		}
 	}
 
 	plugins {
@@ -13,5 +17,7 @@ pluginManagement {
 	}
 }
 
-// Should match your modid
 rootProject.name = "hideandseek"
+
+include("client")
+include("server")
